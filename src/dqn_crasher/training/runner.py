@@ -248,7 +248,7 @@ class MultiAgentRunner:
 
         env = gym.make(self.env_name, config=self.gym_cfg, render_mode="rgb_array")
 
-        # Record videos when crash
+        # Record videos if requested (configured to record every episode by default for testing)
         video_folder = os.path.join(self.cfg.get("root_directory", "results"), "videos")
         # Use t_start to give a unique name, preventing overwrite since we recreate env each time
         video_prefix = f"crash_step_{t_start}"
@@ -350,11 +350,12 @@ class MultiAgentRunner:
                     base_env = env.unwrapped
                     if hasattr(base_env, "road"):
                         for v in base_env.road.vehicles:
-                            # look for the ego vehicle or any vehicle that has collision data
+                            # We look for the ego vehicle or any vehicle that has collision data
+                            # Usually the ego vehicle (index 0 or flagged) will have it if it crashed
                             if hasattr(v, "collision_classification") and v.collision_classification:
                                 cc = v.collision_classification
-                                
-                                # side-swipe direction based on ego pov
+
+                                # Refine side-swipe direction based on ego feature
                                 c_type = cc.collision_type
                                 if c_type == "side-swipe":
                                     if "left" in cc.ego_feature:
@@ -472,7 +473,9 @@ class MultiAgentRunner:
 
         env.close()
 
-        # keep video if crash occured and renames based on type of crash
+        # Video Cleanup Logic
+        # RecordVideo creates files like "{prefix}-episode-0.mp4" (since we reset env each time)
+        # We only want to keep the video if a crash occurred.
         video_path = os.path.join(video_folder, f"{video_prefix}-episode-0.mp4")
         if os.path.exists(video_path):
             if not info.get("crashed", False):
@@ -481,6 +484,7 @@ class MultiAgentRunner:
                 except OSError:
                     pass # Best effort cleanup
             else:
+                # Crash happened, rename file to include the crash type
                 try:
                     c_type = info.get("collision_details", {}).get("collision_type", "unknown_crash")
                     new_name = f"{c_type}_step_{t_start}-episode-0.mp4"

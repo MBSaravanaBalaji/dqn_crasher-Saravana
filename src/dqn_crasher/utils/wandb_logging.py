@@ -232,11 +232,12 @@ def log_stats(info, episode_statistics: dict, checkpoint=False, checkpoint_step=
         )
 
     # Log detailed collision stats
+    # Filter for only specific keys as requested
     allowed_keys = ["rear-end", "side-swipe", "side-swipe-left", "side-swipe-right"]
-    
+
     if "total_crashes_by_type" in episode_statistics:
         for key, count in episode_statistics["total_crashes_by_type"].items():
-           
+            # Check if the key contains any of our allowed types (e.g. "side-swipe" matches "side-swipe")
             if any(allowed in key for allowed in allowed_keys):
                 wandb_log[f"{prefix}/crashes/collision_type/{key}"] = count
 
