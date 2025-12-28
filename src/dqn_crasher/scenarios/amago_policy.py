@@ -32,7 +32,7 @@ import highway_env
 
 
 class AMAGOPolicy(BasePolicy):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, trajectory_store_dir, *args, **kwargs):
 
         # TODO: Parametrize device selection
         dev_config = { "device": 'cuda' }
@@ -73,9 +73,8 @@ class AMAGOPolicy(BasePolicy):
             "max_seq_len": 400,
         }
 
-        self.car_id = 0
         self.parallel_actors = 1
-        self.sample_actions = True
+        self.sample_actions = False
         self.hidden_state = None
 
         print(f"Initializing policy with args: {policy_kwargs}")
@@ -110,6 +109,17 @@ class AMAGOPolicy(BasePolicy):
 
         self.prev_action = None
 
+        class_name = type(self).__module__ + "." + type(self).__name__
+        train_file_path = os.path.join(
+            trajectory_store_dir, "train", f"{class_name}.jsonl"
+        )
+        test_file_path = os.path.join(
+            trajectory_store_dir, "test", f"{class_name}.jsonl"
+        )
+
+        self.store: TrajectoryStore = TrajectoryStore(file_path=train_file_path)
+        self.test_store: TrajectoryStore = TrajectoryStore(file_path=test_file_path)
+
     @property
     def policy(self) -> Agent:
         """Returns the current Agent policy free from the accelerator wrapper."""
@@ -119,13 +129,20 @@ class AMAGOPolicy(BasePolicy):
     def device(self):
         return self.accelerator.device
 
+    @property
+    def car_id(self):
+        return self._car_id
+
     def caster(self):
         """Get the context manager for mixed precision training."""
         return contextlib.suppress()
 
-    def reset(self, obs, info, batched_envs: int = 1):
+    def reset(self, obs = None, info = None, batched_envs: int = 1, test : bool = True):
         self.step_count = np.zeros((batched_envs,), dtype=np.int64)
         self.prev_action = np.zeros((batched_envs, 5), dtype=np.uint8)
+        self.hidden_state = None
+        if obs is None:
+            return None, None
         timestep = self.make_timestep(obs, self.prev_action, None, None)
         return timestep, info
         
@@ -136,7 +153,19 @@ class AMAGOPolicy(BasePolicy):
     def save_state(self):
         pass
 
-    def select_action(self, obs, rewards, terminateds, truncateds, infos, batched_envs: int = 1):
+    def set_state(self, ego_state, npc_state):
+        pass
+
+    def set_config(self, config: dict):
+        pass
+
+    def set_car_id(self, car_id: int):
+        self._car_id = car_id
+
+    def select_action(self, obs, rewards, terminateds, truncateds, infos, batched_envs: int = 1, car_id: int = 0):
+        if self.car_id is None:
+            self._car_id = car_id
+
         if self.hidden_state is None:
             # init new hidden state
             self.hidden_state = self.policy.traj_encoder.init_hidden_state(
@@ -161,20 +190,24 @@ class AMAGOPolicy(BasePolicy):
         
         self.prev_action =self.make_action_rep(actions)
 
-        return actions
+        return actions, self.prev_action.copy()
 
     def make_action_rep(self, action, batched_envs : int = 1) -> np.ndarray:
         # action as one-hot
         action_rep = np.zeros((batched_envs, 5), dtype=np.uint8)
         action_rep[np.arange(batched_envs), action[..., 0]] = 1
+
         return action_rep.astype(np.uint8)
 
-    def update(self):
-        pass
+    def update(self, transition: Transition, done, train):
+        return transition.next_state
 
     def make_timestep(self, obs, prev_action, reward, terminal, batched_envs : int = 1):
+
+
         if isinstance(obs, tuple):
             obs = obs[self.car_id]
+            obs = obs[:, -5:]
 
         if not isinstance(obs, dict):
             obs = {"observation": obs}
@@ -227,20 +260,31 @@ class AMAGOPolicy(BasePolicy):
 
 
 if __name__ == "__main__":
-    amago_policy = AMAGOPolicy()
+    amago_policy = AMAGOPolicy(trajectory_store_dir='.')
+    amago_policy.set_car_id(0)
     amago_policy.policy.eval()
 
     gym_config = load_pkg_yaml("configs/env/multi_agent.yaml")
-    env = gym.make('crash-v0', config=gym_config)
+    env = gym.make('crash-v0', render_mode = 'rgb_array',  config=gym_config)
+    env = gym.wrappers.RecordVideo(env, video_folder="./",
+              episode_trigger=lambda e: True)
     obs, info = env.reset()
     timestep, info = amago_policy.reset(obs, info)
     # obs, rl2s, time_idxs = amago_policy.get_t([timestep.as_input()])
 
     done = False
 
-    while not done:
+    episodes = 0
+    while not done and episodes < 10:
         actions = amago_policy.select_action(obs, None, None, None, None)
         action = actions.squeeze().cpu().numpy()
         obs, reward, term, trunc, info = env.step((action, 0))
         done = np.logical_or(term, trunc)
+        env.render()
+
+        if done:
+            obs, info = env.reset()
+            episodes += 1
+            done = False
+
 

@@ -1,0 +1,41 @@
+seed: 42
+
+env_name: "crash-v0"
+architecture: "DQN"
+track: True
+device: "cuda"
+
+initial_model_A: /p/crash/dqn_vs_4mobil/models/model_1000000.pth
+initial_model_B: /p/crash/dqn_vs_4mobil/models/model_1000000.pth
+
+policy_A:
+  - policies.AMAGOPolicy
+policy_B:
+  - policies.DQNPolicy
+
+frame_stack: 5
+render: False
+train_ego: True
+
+# NN
+batch_size: 512
+gamma: 0.8
+start_e: 1.0
+end_e: 0.05
+decay_e: 60000
+tau: 0.005
+lr: 0.00002
+buffer_size: 150000
+buffer_type: "ER"
+num_hidden_layers: 2
+hidden_layer: 1028
+
+checkpoint_testing_episodes: 10
+testing_episodes: 10
+total_timesteps: 100000
+test_interval: 1000
+
+save_trajectories: True
+root_directory: "/p/crash/dqn_vs_npc"
+trajectory_path: "episodes"
+model_save_path: "models"
