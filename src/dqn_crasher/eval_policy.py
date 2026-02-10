@@ -62,6 +62,8 @@ def run_policy_evaluation(config, device, policy_A, policy_B, model_str):
     run = initialize_logging(config, False, eval=True, run_name = f"{model_str}_eval_{config.get("model_pool")}")
     runner = MultiAgentRunner(config, device, policy_A, policy_B)
     runner.test()
+
+    runner.env.close()
         
 
 
@@ -78,11 +80,14 @@ def main():
     model_b = '/p/crash/testest/models/NPC_1/model_100000.pth'
 
     policy_a = build_new_amago_policy(config, device)
-    agent_b, policy_b = build_new_dqn_policy(config, device, 1, model_b, "NPC", False)
+    agent_b, policy_b = build_new_dqn_policy(config, device, 1, model_a, "EGO", False)
+    # agent_b, policy_b = build_new_dqn_policy(config, device, 1, model_b, "NPC", False)
 
     policy_a.set_car_id(0)
 
     run_policy_evaluation(config, device, policy_a, policy_b, "EGO")
+
+
         
 
 

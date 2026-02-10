@@ -124,6 +124,7 @@ def log_stats(info, episode_statistics: dict, checkpoint=False, checkpoint_step=
         "right_lane_reward",
         "high_speed_reward",
         "collision_reward",
+        "num_retries",
     ]
     for stat in scenario_stat_keys:
         if stat not in episode_statistics["aggregate"]:
@@ -133,6 +134,10 @@ def log_stats(info, episode_statistics: dict, checkpoint=False, checkpoint_step=
         if stat == "num_crashes":
             episode_statistics["aggregate"][stat][info["scenario"]].append(
                 info["crashed"]
+            )
+        elif stat == "num_retries":  # -------- NEW --------
+            episode_statistics["aggregate"][stat][info["scenario"]].append(
+                info["num_retries"]
             )
         else:
             episode_statistics["aggregate"][stat][info["scenario"]].append(
@@ -151,13 +156,8 @@ def log_stats(info, episode_statistics: dict, checkpoint=False, checkpoint_step=
     ep_duration = episode_statistics.get("episode_duration", 1)
     ego_speed = episode_statistics.get("ego_speed", 0)
     npc_speed = episode_statistics.get("npc_speed", 0)
+    num_retries = episode_statistics.get("num_retries", 0)
 
-    # Initialize deque collections if they don't exist
-    for key in ["ep_rew_total", "ep_len_total", "ego_speed_total", "npc_speed_total"]:
-        if key not in episode_statistics:
-            from collections import deque
-
-            episode_statistics[key] = deque([], maxlen=100)
 
     # Add statistics to deques
     episode_statistics["ep_rew_total"].append(ep_rewards)
@@ -204,10 +204,12 @@ def log_stats(info, episode_statistics: dict, checkpoint=False, checkpoint_step=
         f"{prefix}/npc_speed_mean": npc_speed / episode_duration,
         f"{prefix}/scenario": info["scenario"],
         f"{prefix}/epsilon": epsilon,
+        f"{prefix}/num_retries": info.get("num_retries", 0),
         f"{prefix}/collision_reward": collision_reward / episode_duration,
         f"{prefix}/{info['scenario']}/ego_speed_mean": ego_speed / episode_duration,
         f"{prefix}/{info['scenario']}/npc_speed_mean": npc_speed / episode_duration,
         f"{prefix}/{info['scenario']}/crash": int(info["crashed"]),
+        f"{prefix}/{info['scenario']}/num_retries": info.get("num_retries", 0),
     }
 
     # Only add these metrics if we have crash data for this spawn config

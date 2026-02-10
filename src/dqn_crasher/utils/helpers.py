@@ -98,6 +98,7 @@ def initialize_stats(queue_len=100) -> dict:
 
 def populate_stats(info, episode_statistics: dict):
     episode_statistics["scenario"] = info["scenario"]
+    episode_statistics["num_retries"] = info["num_retries"]
     episode_statistics["episode_duration"] += 1
     episode_statistics["ego_speed"] += info["ego_speed"]
     episode_statistics["npc_speed"] += info["npc_speed"]

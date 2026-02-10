@@ -21,6 +21,8 @@ from dqn_crasher.utils.wandb_logging import (
     log_stats,
 )
 
+from dqn_crasher.training.retry_on_crash_wrapper import RetryOnCrashWrapper
+
 
 class MultiAgentRunner:
     def __init__(self, config, device, policy_a, policy_b, update_elo: bool = False):
@@ -42,6 +44,14 @@ class MultiAgentRunner:
         self.n_actions = self.action_space.n
         self.n_obs = 10 * config.get("frame_stack", 1)
         tmp.close()
+
+        self.gym_cfg['offscreen_rendering'] = True
+
+        self.env = gym.make(self.env_name, config=self.gym_cfg, render_mode="rgb_array")
+        self.env = RetryOnCrashWrapper(self.env, max_retries=1000)
+        if self.cfg.get("render", False):
+            self.env = gym.wrappers.RecordVideo(self.env, video_folder=f"./episode_videos", episode_trigger=lambda e: True)
+            self.env.unwrapped.set_record_video_wrapper(self.env)
 
     def save_model(self, train_player, step_number: int = 0):
         if train_player == "A" and type(self.A.agent) == DQN_Agent:
@@ -330,7 +340,7 @@ class MultiAgentRunner:
             actions = (a_A.cpu().numpy(), a_B.cpu().numpy())
 
             # env step
-            obs, reward, term, trunc, info = env.step(actions)
+            obs, reward, term, trunc, info = self.env.step(actions)
             done = term or trunc
 
             # Extract collision classification if crashed
@@ -365,8 +375,7 @@ class MultiAgentRunner:
 
 
             if self.cfg.get("render", False):
-                env.render()
-
+                self.env.render()
             next_A, next_B = helpers.obs_to_state(
                 obs, self.n_obs, self.dev, frame_stack=self.cfg["frame_stack"]
             )
@@ -480,4 +489,4 @@ class MultiAgentRunner:
                 except OSError:
                     pass # Keep original name if rename fails
 
-        return t
+        return steps

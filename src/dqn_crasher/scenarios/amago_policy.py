@@ -32,7 +32,7 @@ import highway_env
 
 
 class AMAGOPolicy(BasePolicy):
-    def __init__(self, trajectory_store_dir, *args, **kwargs):
+    def __init__(self, trajectory_store_dir, checkpoint_path: str = None, *args, **kwargs):
 
         # TODO: Parametrize device selection
         dev_config = { "device": 'cuda' }
@@ -74,7 +74,7 @@ class AMAGOPolicy(BasePolicy):
         }
 
         self.parallel_actors = 1
-        self.sample_actions = False
+        self.sample_actions = True
         self.hidden_state = None
 
         print(f"Initializing policy with args: {policy_kwargs}")
@@ -103,9 +103,14 @@ class AMAGOPolicy(BasePolicy):
 
         # Not training but need to match state of checkpoint
         self.accelerator.register_for_checkpointing(self.lr_schedule) # Not doing this will result in an error "No Distributed Objects"
-        # TODO: Parametrize ckpt_path
-        ckpt_path = '/p/crash/amago-multi-car-lane-400/multi-car-lane-400-2000_crash-v0_trial_0/ckpts/training_states/multi-car-lane-400-2000_crash-v0_trial_0_epoch_1950'
-        self.accelerator.load_state(ckpt_path)
+        
+        # Use provided checkpoint_path or default
+        if checkpoint_path is None:
+            checkpoint_path = '/p/crash/amago-multi-car-lane-400/multi-car-lane-400-2000_crash-v0_trial_0/ckpts/training_states/multi-car-lane-400-2000_crash-v0_trial_0_epoch_1950'
+        
+        self.checkpoint_path = checkpoint_path
+        print(f"Loading checkpoint from: {checkpoint_path}")
+        self.accelerator.load_state(checkpoint_path)
 
         self.prev_action = None
 

@@ -30,12 +30,12 @@ buffer_type: "ER"
 num_hidden_layers: 2
 hidden_layer: 1028
 
-checkpoint_testing_episodes: 10
-testing_episodes: 10
+checkpoint_testing_episodes: 100000
+testing_episodes: 100000
 total_timesteps: 100000
 test_interval: 1000
 
 save_trajectories: True
-root_directory: "/p/crash/dqn_vs_npc"
+root_directory: "/p/crash/amago_vs_npc"
 trajectory_path: "episodes"
 model_save_path: "models"
