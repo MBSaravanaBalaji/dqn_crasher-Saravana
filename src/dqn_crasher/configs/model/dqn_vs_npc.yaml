@@ -30,12 +30,12 @@ buffer_type: "ER"
 num_hidden_layers: 1
 hidden_layer: 256
 
-checkpoint_testing_episodes: 10
-testing_episodes: 10
-total_timesteps: 100000
+checkpoint_testing_episodes: 2
+testing_episodes: 5
+total_timesteps: 5000
 test_interval: 1000
 
 save_trajectories: True
-root_directory: "/p/crash/dqn_vs_npc"
+root_directory: "./new_results"
 trajectory_path: "episodes"
 model_save_path: "models"

@@ -1,0 +1,77 @@
+# Environment config for master NPC training (crash_type_reward/master/).
+#
+# Two vehicles on a 3-lane road:
+#   - NPC (controlled_vehicles=1): DQN-controlled setup vehicle
+#   - Ego (other_vehicles=1): IDM/MOBIL — crash type is read from ego's classification
+#
+# Goal: NPC engineers scenarios where EGO causes the crash (e.g. ego rear-ends NPC).
+# Reward comes from MasterRewardWrapper; all env-side rewards are zeroed below.
+#
+# Rear-end cut-in curriculum: restrict spawns via CLI (--spawn_subset forward_left,forward_right)
+# and use --apply_rear_end_defaults (see eval_utils.REAR_END_TRAINING_DEFAULTS).
+#
+# Spawn geometry (NPC relative to ego):
+#   forward_left/right : NPC ahead in adjacent lane — natural cut-in for rear-end
+#   forward_center     : NPC ahead in same lane
+#   adjacent_*         : NPC alongside ego
+#   behind_*           : NPC behind ego (hard for rear-end; ego must catch up)
+
+action:
+  action_config:
+    target_speeds:
+      - 5
+      - 10
+      - 15
+      - 20
+      - 25
+      - 30
+      - 34
+    type: DiscreteMetaAction
+  type: MultiAgentAction
+
+controlled_vehicles: 1
+other_vehicles: 1
+lanes_count: 3
+duration: 50
+initial_lane_id: null
+initial_speed: 20
+mean_delta_v: -12
+mean_distance: 20
+
+observation:
+  observation_config:
+    type: Kinematics
+    normalize: True
+    see_behind: True
+    absolute: False
+    vehicles_count: 2
+  type: MultiAgentObservation
+
+policy_frequency: 5
+vehicles_count: 0
+
+spawn_configs:
+  - behind_left
+  - behind_right
+  - behind_center
+  - adjacent_left
+  - adjacent_right
+  - forward_left
+  - forward_right
+  - forward_center
+
+adversarial: True
+normalize_reward: False
+use_mobil: True
+vs_mobil: True
+multi_car: False
+tolerance: 0.001
+
+# All env-side rewards zeroed — MasterRewardWrapper handles reward
+collision_reward: 0
+ttc_x_reward: 0
+ttc_y_reward: 0
+right_lane_reward: 0.0
+high_speed_reward: 0.0
+lane_change_reward: 0
+reward_speed_range: [20, 25]

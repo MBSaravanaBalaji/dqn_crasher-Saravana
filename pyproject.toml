@@ -19,7 +19,9 @@ dependencies = [
   "matplotlib>=3.10.0",
   "gymnasium>=1.0.0",
   "gym>=0.26.2",
-  "wandb>=0.20.0"
+  "wandb>=0.20.0",
+  "highway-env",
+  "moviepy>=2.2.1",
 ]
 
 # optional extra bundles for dev/test
@@ -46,3 +48,6 @@ dqn_crasher = ["configs/**/*.yaml"]
 # Exclude non-library folders from the wheel
 [tool.setuptools.exclude-package-data]
 "*" = ["__pycache__/*", "*.pyc", "*.pyo"]
+
+[tool.uv.sources]
+highway-env = { git = "https://github.com/amarkoolk/HighwayEnv.git", rev = "multi-car-scenario" }

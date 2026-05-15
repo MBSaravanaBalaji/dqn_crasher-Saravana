@@ -56,6 +56,7 @@ class TrajectoryStore(object):
             "reward": float(transition.reward),
             "ttc_x": info["ttc_x"],
             "ttc_y": info["ttc_y"],
+            "collision_details": info.get("collision_details", None),
         }
         self.episodes[self.current_episode].append(entry)
 

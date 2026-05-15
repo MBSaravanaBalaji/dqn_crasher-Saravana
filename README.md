@@ -12,7 +12,27 @@ cd dqn_crasher
 pip install -e .
 ```
 
+
 This will install all dependencies and make the `dqn_crasher` package (and its console scripts) available.
+
+### Using `uv` (Recommended)
+
+To set up the environment with `uv`:
+
+1.  **Install `uv`** (if not already installed):
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+2.  **Sync Dependencies**:
+    ```bash
+    uv sync
+    ```
+    This successfully installs the project with the specific `HighwayEnv` branch (`multi-car-scenario`).
+
+3.  **Run commands**:
+    prefix with `uv run`, e.g., `uv run dqn-crasher`.
+
 
 ## Usage
 

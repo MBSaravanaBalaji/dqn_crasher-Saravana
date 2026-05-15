@@ -1,0 +1,93 @@
+# Environment config for crash-type-specific adversarial training.
+#
+# Two vehicles on a 3-lane road:
+#   - NPC (controlled_vehicles=1): trained by DQN to cause a target crash type
+#   - Victim (other_vehicles=1): driven by IDM (no lane changes)
+#
+# Reward comes entirely from SATRewardWrapper — all env-side rewards are zeroed out.
+#
+# spawn_configs below is the full pool — all 8 configs are used for every target.
+# Dense MTV shaping handles approach geometry; no need to restrict per-target.
+#
+# Spawn config geometry (NPC → victim):
+#   behind_center  : NPC behind victim, same lane          → rear-end
+#   behind_left    : NPC behind-left of victim             → needs to pull alongside
+#   behind_right   : NPC behind-right of victim            → needs to pull alongside
+#   adjacent_left  : NPC alongside victim on left          → lane change right → side-swipe-left
+#   adjacent_right : NPC alongside victim on right         → lane change left  → side-swipe-right
+#   forward_left   : NPC ahead-left of victim (cut-in)     → not used currently
+#   forward_right  : NPC ahead-right of victim (cut-in)    → not used currently
+#   forward_center : NPC ahead in same lane (victim behind)→ not used currently
+
+action:
+  action_config:
+    target_speeds:
+      - 15
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+      - 21
+      - 22
+      - 23
+      - 24
+      - 25
+      - 26
+      - 27
+      - 28
+      - 29
+      - 30
+      - 31
+      - 32
+      - 33
+      - 34
+    type: DiscreteMetaAction
+  type: MultiAgentAction
+
+controlled_vehicles: 1
+other_vehicles: 1
+lanes_count: 3
+duration: 40
+initial_lane_id: null
+initial_speed: 20
+mean_delta_v: 0
+mean_distance: 20
+
+observation:
+  observation_config:
+    type: Kinematics
+    normalize: True
+    see_behind: True
+    absolute: False
+    vehicles_count: 2
+  type: MultiAgentObservation
+
+policy_frequency: 1
+vehicles_count: 0
+
+spawn_configs:
+  - behind_left
+  - behind_right
+  - behind_center
+  - adjacent_left
+  - adjacent_right
+  - forward_left
+  - forward_right
+  - forward_center
+
+adversarial: True
+normalize_reward: False
+use_mobil: True
+vs_mobil: True
+multi_car: False
+tolerance: 0.001
+
+# All env-side rewards zeroed — SATRewardWrapper handles everything
+collision_reward: 0
+ttc_x_reward: 0
+ttc_y_reward: 0
+right_lane_reward: 0.0
+high_speed_reward: 0.0
+lane_change_reward: 0
+reward_speed_range: [20, 25]

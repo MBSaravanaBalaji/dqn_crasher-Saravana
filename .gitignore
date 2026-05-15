@@ -1,18 +1,37 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 dist/
 build/
-*.log
 
+# Environments
 .venv/
 .env/
+
+# Jupyter
 .ipynb_checkpoints/
 
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Logs
+*.log
+
+# Training outputs
 wandb/
 outputs/
+results/
+new_results/
 models/
+data/
 
+# Claude local config 
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/
+CLAUDE.md
 # IDE
 .vscode/
 .idea/
